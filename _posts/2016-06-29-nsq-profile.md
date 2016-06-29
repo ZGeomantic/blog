@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "NSQ消息队列的几个特性与场景理解"
-date:   2016-06-29 12:32:28 +0800
+date:   2016-06-28 12:32:28 +0800
 categories: my article
 ---
 
