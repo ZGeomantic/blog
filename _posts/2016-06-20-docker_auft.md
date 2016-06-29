@@ -4,6 +4,7 @@ title:  "docker源码分析——v1.2与v1.11对比"
 date:   2016-06-20 15:32:28 +0800
 categories: my article
 ---
+
 分析一下docker/api/server/router包下面的逻辑调整。
 
 可以肯定的一点是，与v1.2相比，v1.11已经取消了根据cmd参数，通过反射来调用相应函数的方式。现在统一的用Backend来统一接口，直接注册到路由中，不同再创建、运行job，可能连Engine都不需要了。
@@ -11,10 +12,10 @@ categories: my article
 在api/server/router下的每个子目录中，都有一样的代码组织结构：
 
 
-	-- foo 	
-	  --| backend.go 	
-	  --| foo.go 		
-	  --| foo_routes.go	
+	|-- foo 	
+	   |-- backend.go 	
+	   |-- foo.go 		
+	   |-- foo_routes.go	
   
 
 上面的foo代表router目录下的任一个子目录，对外提供的docker命令行操作api，比如[build][build],container等，foo目录下的具体文件虽然有不同，但是一定会有上面列举出来的三个文件。其中
