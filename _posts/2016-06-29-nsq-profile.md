@@ -60,7 +60,7 @@ messages
 
 ## 其他问题
 
-- nsq的消息是被推送到消费者？还是由消费者自己去轮询（kafka的策略）？
+### 1. nsq的消息是被推送到消费者？还是由消费者自己去轮询（kafka的策略）？
 	
 	[引用一段官网上话](http://nsq.io/overview/design.html#efficiency)：
 	
@@ -88,3 +88,23 @@ decrementing the server-side RDY count for that client).
 	5. 返回处理的结果是成功还是失败
 	
 首先明确一个前提，就是一个consumer可以同时连接多个producer（甚至说所有的producer）。producer只会向已经更行了RDY状态大于0的consumer发送消息，所以果从这个角度来看，nsq中的消息是被推送到consumer的。但是，consumer在汇报ready状态的时候，是轮询每一个nsqd的。
+
+### 2. 既然不同的nsqd之间没有交流，如果一个topic在两个以上的nsqd中都存在，何保证一个topic中的某个消息只被一个channel接受？
+这个问题本身就是错的。一个topic中的消息会被所有的channel接收。一个channel中的消息才会只被一个cousumer接收。
+
+首先这个问题的担忧是建立在这样一个假设上的：若topic分布在多个nsqd上，那么每个producer发出的消息都应该在这些nsqd上都有一个拷贝。只有在这种情况下，才需要担心会被发送到多个channel中的情况。
+但实际上，一个producer只会把一个消息发送给一个nsqd，并且这个nsqd与集群内的其他nsqd是没任何交流的，也就不存在这个消息有多个拷贝的情况。
+如果某个cousumer订阅了这个topic下的某个channel，此时这个channel才会被创建。
+
+假设，某个topic叫『跑男』被分布在两个nsqd上，分别叫做A,B，并且都有producer往里面放内容（因为Topics are created on first use by publishing to the named topic or by subscribing to a channel on the named topic.）。一个cousumer叫小强订阅了这个topic下的channel叫『浙江卫视』，此时A和B上都有『跑男』+『浙江卫视』的channel。
+如果某个procuder往B发布了新一集的跑男，A上是没有的。小强在A，B上都注册过RDY > 0；所以B会推送给小强新一集的跑男消息。这就是一个完整的过程。一切工作正常的原因是A，B都有完整的channel订阅信息，谁获得到信息谁负责推送，所以不会有问题。
+
+这时候有强迫症的同学肯定又担心了，如果某个nsqd的注册信息不完整呢？比如突然多了一个C，消息也发送到了C上，但是小强还没有通过nsqlookupd发现这个C，那消息会丢吗？当然不会，如果消息没有被任何消费者接受，这个消息是会存贮在nsqd中一直等到有人把它领走的。如果有人把消息领走了，即使不是小强也没有关系，因为channel不是广播，就是单点的，只要consumer处理掉就行了，管他是不是小强呢。
+
+如果非要找一个临界的情况，倒是有一个，那就是当有多了一个消费者杰克，订阅了topic『跑男』下的另一个channel『爱奇艺』，刚刚到A那里注册完，但是还没有来得及到B那里注册这个topic，这时候B刚巧又收到了一条新的跑男消息，那么B会推送给订阅了『跑男』+『浙江卫视』的小强，之后这条消息就处理完毕了，杰克会丢掉这条消息。其实这也是合理的，因为这个topic下的channel信息没在整个集群中同步完，也就是没有达到一致。所以这也启发我们要注意一点
+
+	1. 确保consumer与所有包含它订阅的topic的nsqd保持连接是极其重要的，如果不能保证会发生严重
+	的消息丢失
+	
+	2. 如果新上线一个consumer，并且在已有的topic中订阅了一个新的channel，在它没有连接到所有
+	nsqd之前的这段时间，所有发到它没有连接到的nsqd上的消息都会丢失。
