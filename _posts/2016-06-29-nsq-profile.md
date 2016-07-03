@@ -56,7 +56,7 @@ messages
 
 也就是充分利用cosuner幂等操作的特性，做一个冗余的nsqd，每条消息都处理两遍，虽然有点费事，但是对于不允许数据丢失的场合，这样的冗余还是可以接受的。
 
-![image](https://github.com/ZGeomantic/blog/blob/gh-pages/img/nsq-comuser-recvmsg-process.png)
+![image](https://raw.githubusercontent.com/ZGeomantic/blog/gh-pages/img/nsqd_to_consumer.png)
 
 ## 其他问题
 
@@ -78,7 +78,7 @@ decrementing the server-side RDY count for that client).
 ```
 	
 
-![image](../img/nsq-comuser-recvmsg-process.png)
+![image](https://raw.githubusercontent.com/ZGeomantic/blog/gh-pages/img/nsq-comuser-recvmsg-process.png)
 
 上流程图的步骤如下：
 
