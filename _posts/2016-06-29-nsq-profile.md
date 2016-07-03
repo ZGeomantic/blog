@@ -56,7 +56,7 @@ messages
 
 也就是充分利用cosuner幂等操作的特性，做一个冗余的nsqd，每条消息都处理两遍，虽然有点费事，但是对于不允许数据丢失的场合，这样的冗余还是可以接受的。
 
-![image](http://o9iu90isb.bkt.clouddn.com/nsqd_to_consumer.png)
+![image](../img/nsqd_to_consumer.png)
 
 ## 其他问题
 
@@ -77,8 +77,9 @@ messages will be pushed to the client as they are available (each time
 decrementing the server-side RDY count for that client).
 ```
 	
-![image](http://o9iu90isb.bkt.clouddn.com/nsq-comuser-recvmsg-process.png)
-	
+
+![image](../image/nsq-comuser-recvmsg-process.png)
+
 上流程图的步骤如下：
 
 	1. consumer通过某种方式（nsqlookupd查询，或者直接配置nsqd地址）获取到nsqd地址后，通过tcp连接上
